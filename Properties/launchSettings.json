@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "HemanWinUI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "HemanWinUI (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
