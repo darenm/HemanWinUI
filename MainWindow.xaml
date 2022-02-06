@@ -19,26 +19,23 @@
             <RowDefinition Height="Auto" />
             <RowDefinition />
         </Grid.RowDefinitions>
+
+        <!--Grid for shadow projection -->
         <Grid x:Name="BackgroundGrid"
               Background="{StaticResource ApplicationPageBackgroundThemeBrush}"
               Grid.RowSpan="2"/>
 
-        <StackPanel Orientation="Horizontal"
-                    Padding="4">
-            <Button Margin="4"
-                    Click="ThreadButtonClick">Render the Example</Button>
-            <Button Margin="4"
-                    Click="ThreadNativeButtonClick">Render the NATIVE example</Button>
-            <TextBlock VerticalAlignment="Center"
-                       x:Name="TextOutput"
-                       Text="No data retrieved yet." />
-        </StackPanel>
+        <!-- Button to launch image render -->
+        <Button Margin="4"
+                Click="ThreadButtonClick">Render the Example</Button>
+        
+        <!-- Image to display rendered image -->
         <Image Grid.Row="1"
                Margin="24"
                x:Name="OutputImage"
                Visibility="Collapsed"
                Shadow="{StaticResource SharedShadow}"
-               Translation="0,0,200">
-        </Image>
+               Translation="0,0,200" />
+
     </Grid>
 </Window>

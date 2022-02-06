@@ -8,27 +8,9 @@ namespace HemanWinUI
 {
     internal class HemanApi
     {
-        public static int GetNumberOfThreads()
-        {
-            return NativeMethods.heman_get_num_threads();
-        }
+        const int Size = 512;
 
-        public static string RenderNativeExample()
-        {
-            var path = Path.GetTempPath();
-            var randomFilename = Path.GetRandomFileName();
-            var fileName = Path.Combine(path, randomFilename.Split('.')[0] + ".png");
-
-            NativeMethods.hut_run_example(fileName);
-
-            return fileName;
-        }
-
-        public static string RenderExample()
-        {
-            const int Size = 512;
-
-            int[] cpLocations =
+        static readonly int[] cpLocations =
             {
                 000,  // Dark Blue
                 126,  // Light Blue
@@ -39,7 +21,7 @@ namespace HemanWinUI
                 255,  // White
             };
 
-            uint[] cpColors =
+        static readonly uint[] cpColors =
             {
                 0x001070,  // Dark Blue
                 0x2C5A7C,  // Light Blue
@@ -50,14 +32,22 @@ namespace HemanWinUI
                 0xFFFFFF,  // White            
             };
 
-            float[] lightpos = { -0.5f, 0.5f, 1.0f };
+        static readonly float[] lightPos = { -0.5f, 0.5f, 1.0f };
 
+        public static int GetNumberOfThreads()
+        {
+            return NativeMethods.heman_get_num_threads();
+        }
+
+        public static string RenderExample()
+        {
             IntPtr[] frames = new IntPtr[5];
 
             GCHandle cpLocationsHandle = GCHandle.Alloc(cpLocations, GCHandleType.Pinned);
             GCHandle cpColorsHandle = GCHandle.Alloc(cpColors, GCHandleType.Pinned);
-            GCHandle lightPosHandle = GCHandle.Alloc(lightpos, GCHandleType.Pinned);
+            GCHandle lightPosHandle = GCHandle.Alloc(lightPos, GCHandleType.Pinned);
             GCHandle framesHandle = GCHandle.Alloc(frames, GCHandleType.Pinned);
+
             try
             {
                 IntPtr cpLocationsPointer = cpLocationsHandle.AddrOfPinnedObject();
@@ -87,11 +77,13 @@ namespace HemanWinUI
                 // Perform lighting.
                 var final = NativeMethods.heman_lighting_apply(hmap, albedo, 1, 1, 0.5f, lightPosPointer);
 
+                // Create film strip image
                 frames[0] = NativeMethods.heman_color_from_grayscale(hmapViz);
                 frames[1] = NativeMethods.heman_color_from_grayscale(occ);
                 frames[2] = normviz;
                 frames[3] = albedo;
                 frames[4] = final;
+
 
                 var filmstrip = NativeMethods.heman_ops_stitch_horizontal(framesPointer, frames.Length);
 
@@ -104,7 +96,6 @@ namespace HemanWinUI
                 // Copy the final IntPtr data to a HemanImage struct
                 var finalImage = Marshal.PtrToStructure<HemanImage>(final);
                 var width = finalImage.Width;
-
 
                 // Cleanup
                 NativeMethods.heman_image_destroy(frames[0]);
@@ -121,15 +112,14 @@ namespace HemanWinUI
             }
             finally
             {
-                FreeHandle(ref cpLocationsHandle);
-                FreeHandle(ref cpColorsHandle);
-                FreeHandle(ref lightPosHandle);
-                FreeHandle(ref framesHandle);
+                FreeHandle(cpLocationsHandle);
+                FreeHandle(cpColorsHandle);
+                FreeHandle(lightPosHandle);
+                FreeHandle(framesHandle);
             }
-
         }
 
-        private static void FreeHandle(ref GCHandle handle)
+        private static void FreeHandle(GCHandle handle)
         {
             if (handle.IsAllocated)
             {
@@ -142,42 +132,41 @@ namespace HemanWinUI
         {
             const string DLL = "heman.dll";
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern int heman_get_num_threads();
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern IntPtr heman_color_create_gradient(int width, int num_colors, IntPtr cp_locations, IntPtr cp_colors);
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern IntPtr heman_generate_island_heightmap(int width, int height, int seed);
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern IntPtr heman_ops_normalize_f32(IntPtr source, float minval, float maxval);
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern IntPtr heman_lighting_compute_occlusion(IntPtr heightmap);
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern IntPtr heman_lighting_compute_normals(IntPtr heightmap);
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern IntPtr heman_color_apply_gradient(IntPtr heightmap, float minheight, float maxheight, IntPtr gradient);
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern void heman_image_destroy(IntPtr img);
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern IntPtr heman_lighting_apply(IntPtr heightmap, IntPtr colorbuffer, float occlusion, float diffuse, float diffuse_softening, IntPtr light_position);
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern IntPtr heman_color_from_grayscale(IntPtr gray);
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl)]
+            [DllImport(DLL)]
             internal static extern IntPtr heman_ops_stitch_horizontal(IntPtr images, int count);
 
-            [DllImport(DLL, CallingConvention = CC.Cdecl, CharSet = CharSet.Ansi)]
+            [DllImport(DLL, CharSet = CharSet.Ansi)]
             internal static extern void hut_write_image(string filename, IntPtr img, float minv, float maxv);
-            [DllImport(DLL, CallingConvention = CC.Cdecl, CharSet = CharSet.Ansi)]
-            internal static extern void hut_run_example(string filename);
+
         }
 
         [StructLayout(LayoutKind.Sequential)]
